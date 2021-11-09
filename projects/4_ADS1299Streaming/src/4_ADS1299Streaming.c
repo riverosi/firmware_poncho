@@ -97,6 +97,7 @@ uint8_t state[3];
 void SysInit(void)
 {
 	SystemCoreClockUpdate();
+	Chip_SetupIrcClocking();
 	LedsInit();
 	ADS1299Init();
     SystickInit(500, SystickInt);
@@ -118,7 +119,7 @@ void ConfigADS(void)
 	ADS1299SetChannelsToDefaultConfigForEMG();
 	//ADS1299SetChannelsToDefaultConfigForECG();
 	/* Cambia la ganancia a 1 para poder utilizarlo con un generador de funciones y que no sature el ADS */
-//	ADS1299ChangeChannelPGAGain(ADS1299_CHANNEL2, ADS1299_GAIN01);
+	//ADS1299ChangeChannelPGAGain(ADS1299_CHANNEL2, ADS1299_GAIN01);
 
 	/* Datos convertidos */
 	/* Indica a traves de la funcion de interrupcion ReadData que hay un dato nuevo en el vector channel_data y state.

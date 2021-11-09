@@ -46,8 +46,8 @@
 #include "spi.h"
 #include "stopwatch.h"
 
-#define BIT_RATE 3000000 /**< Bits por segundo de la SPI*/
-#define BAUD_RATE 115200 /**< Bits por segundo de la UART*/
+#define BIT_RATE 8000000 /**< Bits por segundo de la SPI*/
+#define BAUD_RATE 921600 /**< Bits por segundo de la UART*/
 #define T_POR 150 /* 150 ms to allow time for the supply voltages to reach their final value. */
 #define T_RST 1 /* 1us are 2 tCLK for reset pulse width */
 #define T_AFTER_RST 9 /* 9us are 18 tCLK to start using the ADS1299 */
@@ -97,7 +97,7 @@ void ADS1299Init(void)
 	spiConfig_t spi_config = {SPI_1, MASTER, MODE1, BIT_RATE, SPI_POLLING, NULL };
 	SpiInit(spi_config);
 
-	serial_config serial_init = {SERIAL_PORT_PC, 460800, NULL};
+	serial_config serial_init = {SERIAL_PORT_PC, BAUD_RATE, NULL};
 	UartInit(&serial_init);
 //	InitRingBuffer(UART_USB);
 
@@ -196,6 +196,7 @@ void ADS1299SendUART(uint8_t *uart_buffer)
 //		UART_data[i+26] = 0x00;
 //	UART_data[32] = 0xC0; /**<Footer*/
 //	UARTSendRingBuffer(UART_USB, UART_data, 33);
+	//TEST
 	uint8_t i, UART_data;
 	UART_data = 0xA0; /**<Header*/
 	UartSendByte(SERIAL_PORT_PC, &UART_data);
@@ -207,6 +208,7 @@ void ADS1299SendUART(uint8_t *uart_buffer)
 		UartSendByte(SERIAL_PORT_PC, &UART_data);
 	UART_data = 0xC0; /**<Footer*/
 	UartSendByte(SERIAL_PORT_PC, &UART_data);
+
 }
 
 void ADS1299StopStreaming(void)
@@ -316,7 +318,7 @@ void ADS1299SetChannelsToDefaultConfigForEEG(void)
 	{
 		setting[i].power_down = true;
 		setting[i].use_srb2 = false;
-		setting[i].pga_gain = ADS1299_GAIN24;
+		setting[i].pga_gain = ADS1299_GAIN01;
 		setting[i].channel_input = ADS1299_NORMAL;
 	}
 	setting[ADS1299_CHANNEL1].power_down = false;
@@ -339,7 +341,7 @@ void ADS1299SetChannelsToDefaultConfigForEMG(void)
 	{
 		setting[i].power_down = true;
 		setting[i].use_srb2 = false;
-		setting[i].pga_gain = ADS1299_GAIN24;    // Se puede de acá cambiar la ganancia para todos los canales
+		setting[i].pga_gain = ADS1299_GAIN12;    // Se puede de acá cambiar la ganancia para todos los canales
 		setting[i].channel_input = ADS1299_NORMAL;
 	}
 	setting[ADS1299_CHANNEL1].power_down = false;
@@ -352,7 +354,7 @@ void ADS1299SetChannelsToDefaultConfigForEMG(void)
 	//setting[ADS1299_CHANNEL8].power_down = false;
 
 	ADS1299ConfigAllChannels(setting);
-	ADS1299WriteRegister(ADS1299_CONFIG1, 0x90 | ADS1299_SAMPLE_RATE_1kHZ);  // Acá puedo cambiar la frecuencia de muestreo
+	ADS1299WriteRegister(ADS1299_CONFIG1, 0x90 | ADS1299_SAMPLE_RATE_2kHZ);  // Acá puedo cambiar la frecuencia de muestreo
 	ADS1299WriteRegister(ADS1299_CONFIG3,0xE0); // If Using Internal Reference, Send This Command WREG CONFIG3 E0h
 	//ADS1299WriteRegister(ADS1299_MISC1,0x20);  // close SRB1 switch on-board
 	ADS1299ConfigBiasDrive();
@@ -360,6 +362,7 @@ void ADS1299SetChannelsToDefaultConfigForEMG(void)
 void ADS1299ConfigOneChannel(channel_ADS1299_t channel, CHnSet_ADS1299_t config)
 {
 	ADS1299WriteRegister(ADS1299_CH1SET+channel, config.channel_input|config.pga_gain|(config.power_down<<7)|(config.use_srb2<<3));
+	StopWatch_DelayMs(1);
 	if(!config.power_down)
 		channel_activ |= (1<<channel);
 }
