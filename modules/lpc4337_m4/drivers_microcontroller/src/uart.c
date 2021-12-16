@@ -122,7 +122,7 @@ uint32_t UartInit(serial_config *port)
 	 	case SERIAL_PORT_P2_CONNECTOR:
 
 			Chip_UART_Init(LPC_USART3);
-			Chip_UART_SetBaud(LPC_USART3, port->baud_rate);
+			Chip_UART_SetBaudFDR(LPC_USART3, port->baud_rate);
 
 			Chip_UART_SetupFIFOS(LPC_USART3, UART_FCR_FIFO_EN | UART_FCR_TRG_LEV0);
 
@@ -144,7 +144,7 @@ uint32_t UartInit(serial_config *port)
 
 	 	case SERIAL_PORT_RS485:
 	 		Chip_UART_Init(LPC_USART0);
-	 		Chip_UART_SetBaud(LPC_USART0, port->baud_rate);
+	 		Chip_UART_SetBaudFDR(LPC_USART0, port->baud_rate);
 
 	 		Chip_UART_SetupFIFOS(LPC_USART0, UART_FCR_FIFO_EN | UART_FCR_TRG_LEV0);
 

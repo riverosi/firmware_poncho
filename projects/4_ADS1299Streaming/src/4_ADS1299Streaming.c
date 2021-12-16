@@ -72,9 +72,11 @@
 #include "uart.h"
 #include "systick.h"
 #include "delay.h"
+#include "dsp_EMG.h"
 
 /*==================[macros and definitions]=================================*/
-
+#define BUFFLEN 128
+#define BAUD_RATE_RS485 921600
 /*==================[internal data declaration]==============================*/
 
 /*==================[internal functions declaration]=========================*/
@@ -86,7 +88,8 @@ void ConfigADS(void);
 bool new_data = false;
 int32_t channel_data[8];
 uint8_t state[3];
-
+RINGBUFF_T rbRx;
+float32_t dataBuff[BUFFLEN];
 /*==================[external data definition]===============================*/
 
 /*==================[internal functions definition]==========================*/
@@ -101,6 +104,10 @@ void SysInit(void)
 	LedsInit();
 	ADS1299Init();
     SystickInit(500, SystickInt);
+    fpuInit();//Enable FPU
+	serial_config rs485_init = {SERIAL_PORT_RS485, BAUD_RATE_RS485, NULL};
+	UartInit(&rs485_init);
+    RingBuffer_Init(&rbRx, dataBuff, sizeof(float32_t), BUFFLEN);
 }
 
 void SystickInt(void)
@@ -135,6 +142,11 @@ void ConfigADS(void)
 int main(void)
 {
 	uint8_t uart_buffer[24] = {};
+	float32_t aux;
+	 union {
+		float32_t ptpValue;
+		uint8_t buffer[4];
+	 } u_buffer;
 
 	SysInit();
 	ConfigADS();
@@ -168,9 +180,22 @@ int main(void)
 			uart_buffer[16] = (uint8_t) (channel_data[ADS1299_CHANNEL6]>>8);
 			uart_buffer[17] = (uint8_t) (channel_data[ADS1299_CHANNEL6]);
 
+			aux = (float32_t)(~(channel_data[0] - 1));
+			RingBuffer_Insert(&rbRx, &aux);//insert element in ring buffer
 			ADS1299SendUART(uart_buffer);
 			new_data = false;
 		}
+
+		if (RingBuffer_IsFull(&rbRx))
+		{
+			u_buffer.ptpValue = dsp_emg_rms_f32(dataBuff, BUFFLEN);//Compute RMS value
+			for (int var = 0; var < 4; var++) //Send by RS485
+			{
+				UartSendByte(SERIAL_PORT_RS485, &u_buffer.buffer[var]);
+			}
+			RingBuffer_Flush(&rbRx);//Flush ring buffer
+		}
+
 	}
 	return 0;
 }
