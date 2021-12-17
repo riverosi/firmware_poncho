@@ -106,8 +106,8 @@ void SysInit(void)
     SystickInit(500, SystickInt);
     fpuInit();//Enable FPU
 	serial_config rs485_init = {SERIAL_PORT_RS485, BAUD_RATE_RS485, NULL};
-	UartInit(&rs485_init);
-    RingBuffer_Init(&rbRx, dataBuff, sizeof(float32_t), BUFFLEN);
+	UartInit(&rs485_init); //init RS485
+    RingBuffer_Init(&rbRx, dataBuff, sizeof(float32_t), BUFFLEN); //init Ring buffer
 }
 
 void SystickInt(void)
@@ -180,7 +180,7 @@ int main(void)
 			uart_buffer[16] = (uint8_t) (channel_data[ADS1299_CHANNEL6]>>8);
 			uart_buffer[17] = (uint8_t) (channel_data[ADS1299_CHANNEL6]);
 
-			aux = (float32_t)(~(channel_data[0] - 1));
+			aux = 0.0000000447034889f * (float32_t)(~(channel_data[0] - 1));
 			RingBuffer_Insert(&rbRx, &aux);//insert element in ring buffer
 			ADS1299SendUART(uart_buffer);
 			new_data = false;
